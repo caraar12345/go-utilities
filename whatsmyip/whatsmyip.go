@@ -51,6 +51,5 @@ func whatsmyip() string {
 	}
 
 	final := fmt.Sprintf("IP:  %s\nASN: %s", ip_data.IP, ip_data.Org)
-	fmt.Println(final)
 	return final
 }

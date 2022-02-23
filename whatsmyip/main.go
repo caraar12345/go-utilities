@@ -1,5 +1,8 @@
 package main
 
+import "fmt"
+
 func main() {
-	whatsmyip()
+	ip_data := whatsmyip()
+	fmt.Println(ip_data)
 }
