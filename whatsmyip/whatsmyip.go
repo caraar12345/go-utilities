@@ -22,16 +22,16 @@ type IPInfo struct {
 }
 
 func whatsmyip() string {
-	IPINFO_URL := "https://ipinfo.io"
-	IPINFO_TOKEN := os.Getenv("IPINFO_TOKEN")
+	IpinfoUrl := "https://ipinfo.io"
+	IpinfoToken := os.Getenv("IPINFO_TOKEN")
 
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", IPINFO_URL, nil)
+	req, err := http.NewRequest("GET", IpinfoUrl, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", IPINFO_TOKEN))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", IpinfoToken))
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Fatalln(err)
@@ -43,13 +43,13 @@ func whatsmyip() string {
 	}
 
 	sb := string(body)
-	var ip_data IPInfo
+	var ipData IPInfo
 
-	err = json.Unmarshal([]byte(sb), &ip_data)
+	err = json.Unmarshal([]byte(sb), &ipData)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	final := fmt.Sprintf("IP:  %s\nASN: %s", ip_data.IP, ip_data.Org)
+	final := fmt.Sprintf("IP:  %s\nASN: %s", ipData.IP, ipData.Org)
 	return final
 }
