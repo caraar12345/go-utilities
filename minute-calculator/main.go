@@ -25,7 +25,7 @@ func main() {
 	if len(args) != 2 {
 		log.Printf("Wrong number of args.")
 		log.Printf("Usage:   %v \"alertTime\" \"caseTime\"", runCommand)
-		log.Fatalf("Example: %v \"02/01/06 15:04\" \"02/01/06 15:04\"", runCommand)
+		log.Fatalf("Example: %v \"25/12/22 15:04\" \"25/12/22 15:05\"", runCommand)
 	}
 
 	alertTimeArg := args[0]
