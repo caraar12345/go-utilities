@@ -2,9 +2,9 @@ EXECUTABLE=mincalc
 MINCALC_VERSION = $(shell echo _`git describe --tags | sed 's/mincalc\///'`)
 WINDOWS=$(EXECUTABLE)$(MINCALC_VERSION)_windows_amd64
 LINUX_AMD64=$(EXECUTABLE)$(MINCALC_VERSION)_linux_amd64
-DARWIN_AMD64=$(EXECUTABLE)$(MINCALC_VERSION)_darwin_amd64
+DARWIN_AMD64=$(EXECUTABLE)$(MINCALC_VERSION)_macos_amd64
 LINUX_ARM64=$(EXECUTABLE)$(MINCALC_VERSION)_linux_arm64
-DARWIN_ARM64=$(EXECUTABLE)$(MINCALC_VERSION)_darwin_arm64
+DARWIN_ARM64=$(EXECUTABLE)$(MINCALC_VERSION)_macos_arm64
 
 build_mincalc_macos_arm64:
 	cd mincalc && GOOS=darwin GOARCH=arm64 go build -o out/$(DARWIN_ARM64)
