@@ -9,37 +9,39 @@ import (
 )
 
 const (
-  hiveTimeFormat = "02/01/06 15:04"
+	hiveTimeFormat = "02/01/06 15:04"
 )
 
 func main() {
-  args := os.Args[1:]
- 
-  runCommand := os.Args[0]
+	args := os.Args[1:]
 
-  switch {
-    case strings.Contains(runCommand, "T/go-build"):
-      runCommand = "go run ."
-  }
+	runCommand := os.Args[0]
 
-  if len(args) != 2 {
-    log.Fatalf("Wrong number of args.\nUsage: %v \"alertTime\" \"caseTime\"", runCommand)
-  }
+	switch {
+	case strings.Contains(runCommand, "T/go-build"):
+		runCommand = "go run ."
+	}
 
-  alertTimeArg := args[0]
-  caseTimeArg  := args[1]
-  
-  alertTime, err := time.Parse(hiveTimeFormat, alertTimeArg)
-  if err != nil {
-    log.Panicln(err)
-  }
+	if len(args) != 2 {
+		log.Printf("Wrong number of args.")
+		log.Printf("Usage:   %v \"alertTime\" \"caseTime\"", runCommand)
+		log.Fatalf("Example: %v \"02/01/06 15:04\" \"02/01/06 15:04\"", runCommand)
+	}
 
-  caseTime, err := time.Parse(hiveTimeFormat, caseTimeArg)
-  if err != nil {
-    log.Panicln(err)
-  }
+	alertTimeArg := args[0]
+	caseTimeArg := args[1]
 
-  tta := caseTime.Sub(alertTime).Minutes()
-  
-  fmt.Printf("Alert time: %s\nCase time: %s\nTTA: %v\n", alertTimeArg, caseTimeArg, tta)
+	alertTime, err := time.Parse(hiveTimeFormat, alertTimeArg)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	caseTime, err := time.Parse(hiveTimeFormat, caseTimeArg)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	tta := caseTime.Sub(alertTime).Minutes()
+
+	fmt.Printf("Alert time: %s\nCase time: %s\nTTA: %v\n", alertTimeArg, caseTimeArg, tta)
 }
