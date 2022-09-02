@@ -2,3 +2,5 @@
 .env*
 whatsmyip/whatsmyip
 *.code-workspace
+*/out/*
+*/release/*
