@@ -3,7 +3,7 @@ name: goreleaser-mincalc
 on:
   push:
     tags:
-      - "mincalc-*"
+      - "mincalc/*"
 
 permissions:
   contents: write
