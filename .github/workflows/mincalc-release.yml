@@ -1,0 +1,102 @@
+name: mincalc Release
+on:
+  push:
+   tags:
+     - 'mincalc/*'
+jobs:
+  release-osx:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build Release
+      run: make build_mincalc
+
+    - name: Get version
+      id: get_version
+      run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}
+    
+    - name: Set SHA
+      id: shasum
+      run: |
+        echo ::set-output name=sha::"$(shasum -a 256 ./mincalc/release/mincalc.tar.gz | awk '{printf $1}')"
+   
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: ${{ github.ref }}
+        draft: false
+        prerelease: false
+
+    - name: Upload Release Asset (macOS ARM64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}_macos_arm64.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}_macos_arm64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (macOS AMD64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}_macos_amd64.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}_macos_amd64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Linux ARM64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}_linux_arm64.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}_linux_arm64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Linux AMD64)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}_linux_amd64.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}_linux_amd64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Windows)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}_windows_amd64.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}_windows_amd64.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload Release Asset (Source)
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./mincalc/release/mincalc_${{ steps.get_version.outputs.version }}.tar.gz
+        asset_name: mincalc_${{ steps.get_version.outputs.version }}.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Bump personal tap formula
+      uses: mislav/bump-homebrew-formula-action@v1
+      env:
+        COMMITTER_TOKEN: ${{ secrets.BREW_TOKEN }}
+      with:
+        formula-name: mincalc
+        homebrew-tap: caraar12345/tap
+        download-url: https://github.com/caraar12345/go-utilities/releases/download/${{ steps.get_version.outputs.version }}/mincalc_${{ steps.get_version.outputs.version }}.tar.gz
+
