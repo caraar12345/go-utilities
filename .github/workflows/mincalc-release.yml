@@ -98,5 +98,4 @@ jobs:
       with:
         formula-name: mincalc
         homebrew-tap: caraar12345/tap
-        download-url: https://github.com/caraar12345/go-utilities/releases/download/${{ steps.get_version.outputs.version }}/mincalc_${{ steps.get_version.outputs.version }}.tar.gz
-
+        download-url: https://github.com/caraar12345/go-utilities/releases/tag/mincalc/${{ steps.get_version.outputs.version }}/mincalc_${{ steps.get_version.outputs.version }}.tar.gz
