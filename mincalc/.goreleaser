@@ -1,0 +1,33 @@
+
+builds:
+  - binary: mincalc
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -mod=vendor
+
+release:
+  prerelease: auto
+
+universal_binaries:
+  - replace: true
+
+brews:
+  -
+    name: mincalc
+    homepage: "https://github.com/caraar12345/go-utilities/tree/main/mincalc"
+    tap:
+      owner: caraar12345
+      name: homebrew-tap
+    commit_author:
+      name: Aaron Carson
+      email: aaron@aaroncarson.co.uk
+
+checksum:
+  name_template: 'checksums.txt'
