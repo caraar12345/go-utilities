@@ -13,7 +13,7 @@ jobs:
 
     - name: Get version
       id: get_version
-      run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\//}
+      run: echo ::set-output name=version::${GITHUB_REF/refs\/tags\/mincalc\//}
     
     - name: Set SHA
       id: shasum
