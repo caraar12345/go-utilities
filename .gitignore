@@ -4,3 +4,4 @@ whatsmyip/whatsmyip
 *.code-workspace
 */out/*
 */release/*
+.claude/worktrees
