@@ -57,17 +57,20 @@ type Cue struct {
 
 // VTTFile is the complete parsed representation.
 type VTTFile struct {
-	Lang   string
-	Styles map[string]CueStyle // voice name → style
-	Notes  []string            // NOTE block bodies
-	Cues   []Cue
+	Lang    string
+	Styles  map[string]CueStyle // voice name → style
+	Classes map[string]CueStyle // class name → style (for ::cue(.className))
+	Notes   []string            // NOTE block bodies
+	Cues    []Cue
 }
 
 // ---- Regexps ----
 
 var (
-	reCueVoice = regexp.MustCompile(`(?s)::cue\(v\[voice="([^"]+)"\]\)\s*\{([^}]+)\}`)
+	reCueVoice = regexp.MustCompile(`(?s)::cue\(\s*v\[voice="([^"]+)"\]\s*\)\s*\{([^}]+)\}`)
+	reCueClass = regexp.MustCompile(`(?s)::cue\(\s*\.([A-Za-z0-9_\-]+)\s*\)\s*\{([^}]+)\}`)
 	reHexColor = regexp.MustCompile(`^#[0-9A-Fa-f]{3,8}$`)
+	reBlank    = regexp.MustCompile(`\n{2,}`)
 )
 
 var cssNamedColors = map[string]string{
@@ -85,6 +88,20 @@ var cssNamedColors = map[string]string{
 	"grey":    "#808080",
 	"silver":  "#C0C0C0",
 	"lime":    "#00FF00",
+	"orange":  "#FFA500",
+	"purple":  "#800080",
+	"pink":    "#FFC0CB",
+	"brown":   "#A52A2A",
+	"navy":    "#000080",
+	"teal":    "#008080",
+	"olive":   "#808000",
+	"maroon":  "#800000",
+	"gold":    "#FFD700",
+	"indigo":  "#4B0082",
+	"violet":  "#EE82EE",
+	"coral":   "#FF7F50",
+	"salmon":  "#FA8072",
+	"khaki":   "#F0E68C",
 }
 
 // ---- Public entry point ----
@@ -109,8 +126,9 @@ func ParseVTT(data string) (*VTTFile, error) {
 	}
 
 	vtt := &VTTFile{
-		Lang:   "en",
-		Styles: make(map[string]CueStyle),
+		Lang:    "en",
+		Styles:  make(map[string]CueStyle),
+		Classes: make(map[string]CueStyle),
 	}
 
 	for _, block := range blocks[1:] {
@@ -129,7 +147,7 @@ func ParseVTT(data string) (*VTTFile, error) {
 		case strings.HasPrefix(block, "STYLE"):
 			css := strings.TrimPrefix(block, "STYLE")
 			css = strings.TrimSpace(css)
-			parseStyleBlock(css, vtt.Styles)
+			parseStyleBlock(css, vtt.Styles, vtt.Classes)
 		default:
 			// Check if this block contains a timing arrow.
 			if strings.Contains(block, " --> ") {
@@ -147,22 +165,17 @@ func ParseVTT(data string) (*VTTFile, error) {
 
 // splitBlocks splits the document on one or more consecutive blank lines.
 func splitBlocks(data string) []string {
-	// Replace runs of 2+ newlines with a double newline sentinel.
-	// This handles 3+ blank lines gracefully.
-	for strings.Contains(data, "\n\n\n") {
-		data = strings.ReplaceAll(data, "\n\n\n", "\n\n")
-	}
-	return strings.Split(data, "\n\n")
+	return reBlank.Split(data, -1)
 }
 
 // ---- Style parsing ----
 
-func parseStyleBlock(css string, styles map[string]CueStyle) {
-	matches := reCueVoice.FindAllStringSubmatch(css, -1)
-	for _, m := range matches {
-		voice := m[1]
-		style := parseCSSProperties(m[2])
-		styles[voice] = style
+func parseStyleBlock(css string, styles, classes map[string]CueStyle) {
+	for _, m := range reCueVoice.FindAllStringSubmatch(css, -1) {
+		styles[m[1]] = parseCSSProperties(m[2])
+	}
+	for _, m := range reCueClass.FindAllStringSubmatch(css, -1) {
+		classes[m[1]] = parseCSSProperties(m[2])
 	}
 }
 
