@@ -337,21 +337,19 @@ func (s *srv) renewCert() error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode/100 != 2 {
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 		return fmt.Errorf("renew returned %d: %s", resp.StatusCode, body)
 	}
 
 	var result struct {
-		CRT struct {
-			Raw string `json:"raw"`
-		} `json:"crt"`
+		CRT string `json:"crt"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return fmt.Errorf("decoding renew response: %w", err)
 	}
 
-	newCerts, newKey, err := parseCertChainAndKey([]byte(result.CRT.Raw), currentKey)
+	newCerts, newKey, err := parseCertChainAndKey([]byte(result.CRT), currentKey)
 	if err != nil {
 		return fmt.Errorf("parsing renewed cert: %w", err)
 	}
