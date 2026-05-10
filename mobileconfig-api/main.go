@@ -47,7 +47,25 @@ const acmePlistTmpl = `<?xml version="1.0" encoding="UTF-8"?>
 			<string>4152BEA7-BFC4-4F0A-900E-48FF67A80D60</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
-		</dict>
+		</dict>{{if .IntermediateCABase64}}
+		<dict>
+			<key>PayloadCertificateFileName</key>
+			<string>intermediate_ca.crt</string>
+			<key>PayloadContent</key>
+			<data>{{.IntermediateCABase64}}</data>
+			<key>PayloadDescription</key>
+			<string>Adds a CA intermediate certificate</string>
+			<key>PayloadDisplayName</key>
+			<string>aaroncarson Step Intermediate CA</string>
+			<key>PayloadIdentifier</key>
+			<string>com.apple.security.root.7A2F6E1B-8B3D-4D0A-A4E5-2B6C7D8F9A01</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.root</string>
+			<key>PayloadUUID</key>
+			<string>7A2F6E1B-8B3D-4D0A-A4E5-2B6C7D8F9A01</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>{{end}}
 		<dict>
 			<key>AllowAllAppsAccess</key>
 			<true/>
@@ -126,7 +144,25 @@ const rootCAPlistTmpl = `<?xml version="1.0" encoding="UTF-8"?>
 			<string>FA618494-A2B0-4296-9D90-B8067775371E</string>
 			<key>PayloadVersion</key>
 			<integer>1</integer>
-		</dict>
+		</dict>{{if .IntermediateCABase64}}
+		<dict>
+			<key>PayloadCertificateFileName</key>
+			<string>intermediate_ca.crt</string>
+			<key>PayloadContent</key>
+			<data>{{.IntermediateCABase64}}</data>
+			<key>PayloadDescription</key>
+			<string>Adds a CA intermediate certificate</string>
+			<key>PayloadDisplayName</key>
+			<string>aaroncarson Step Intermediate CA</string>
+			<key>PayloadIdentifier</key>
+			<string>com.apple.security.root.8B3E7F2A-9C4D-4E1A-B5F6-3A7D8C9E0B12</string>
+			<key>PayloadType</key>
+			<string>com.apple.security.root</string>
+			<key>PayloadUUID</key>
+			<string>8B3E7F2A-9C4D-4E1A-B5F6-3A7D8C9E0B12</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+		</dict>{{end}}
 	</array>
 	<key>PayloadDisplayName</key>
 	<string>aaroncarson Step Root CA</string>
@@ -144,15 +180,17 @@ const rootCAPlistTmpl = `<?xml version="1.0" encoding="UTF-8"?>
 </plist>`
 
 type srv struct {
-	token      string
-	mu         sync.RWMutex
-	signingCert *x509.Certificate
-	signingKey  crypto.PrivateKey
-	chainCerts  []*x509.Certificate
-	rootCACert  *x509.Certificate
-	rootCAB64   string
-	stepCAURL  string
-	stepCAPool *x509.CertPool
+	token              string
+	mu                 sync.RWMutex
+	signingCert        *x509.Certificate
+	signingKey         crypto.PrivateKey
+	chainCerts         []*x509.Certificate
+	rootCACert         *x509.Certificate
+	rootCAB64          string
+	intermediateCACert *x509.Certificate
+	intermediateCAB64  string
+	stepCAURL          string
+	stepCAPool         *x509.CertPool
 }
 
 func main() {
@@ -163,15 +201,24 @@ func main() {
 	pool := x509.NewCertPool()
 	pool.AddCert(rootCACert)
 
+	var intermediateCACert *x509.Certificate
+	var intermediateCAB64 string
+	if f := os.Getenv("STEP_INTERMEDIATE_FILE"); f != "" {
+		intermediateCACert, intermediateCAB64 = loadRootCA(f)
+		pool.AddCert(intermediateCACert)
+	}
+
 	s := &srv{
-		token:       token,
-		signingCert: signingCerts[0],
-		signingKey:  signingKey,
-		chainCerts:  signingCerts[1:],
-		rootCACert:  rootCACert,
-		rootCAB64:   rootCAB64,
-		stepCAURL:   envOr("STEP_CA_URL", "https://vault.srv.adhd.energy"),
-		stepCAPool:  pool,
+		token:              token,
+		signingCert:        signingCerts[0],
+		signingKey:         signingKey,
+		chainCerts:         signingCerts[1:],
+		rootCACert:         rootCACert,
+		rootCAB64:          rootCAB64,
+		intermediateCACert: intermediateCACert,
+		intermediateCAB64:  intermediateCAB64,
+		stepCAURL:          envOr("STEP_CA_URL", "https://vault.srv.adhd.energy"),
+		stepCAPool:         pool,
 	}
 
 	go s.startRenewalLoop()
@@ -210,8 +257,9 @@ func (s *srv) handleACME(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("acme").Parse(acmePlistTmpl))
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, map[string]string{
-		"RootCABase64": s.rootCAB64,
-		"SerialNumber": serialNumber,
+		"RootCABase64":         s.rootCAB64,
+		"IntermediateCABase64": s.intermediateCAB64,
+		"SerialNumber":         serialNumber,
 	}); err != nil {
 		log.Printf("acme template error: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -237,7 +285,8 @@ func (s *srv) handleRootCA(w http.ResponseWriter, r *http.Request) {
 	tmpl := template.Must(template.New("rootca").Parse(rootCAPlistTmpl))
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, map[string]string{
-		"RootCABase64": s.rootCAB64,
+		"RootCABase64":         s.rootCAB64,
+		"IntermediateCABase64": s.intermediateCAB64,
 	}); err != nil {
 		log.Printf("rootca template error: %v", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -273,6 +322,9 @@ func (s *srv) sign(data []byte) ([]byte, error) {
 	}
 	s.mu.RLock()
 	sd.AddCertificate(s.rootCACert)
+	if s.intermediateCACert != nil {
+		sd.AddCertificate(s.intermediateCACert)
+	}
 	s.mu.RUnlock()
 	return sd.Finish()
 }
